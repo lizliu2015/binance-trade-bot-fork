@@ -90,10 +90,7 @@ class MockBinanceManager(BinanceAPIManager):
         self.balances[origin_symbol] = self.balances.get(origin_symbol, 0) + order_quantity * (
             1 - self.get_fee(origin_coin, target_coin, False)
         )
-        self.logger.info(
-            f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
-            f"{self.balances[target_symbol]}"
-        )
+        self.logger.info(f"Bought {origin_symbol}, balance now: {self.balances}")
         return {"price": from_coin_price}
 
     def sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
@@ -109,10 +106,7 @@ class MockBinanceManager(BinanceAPIManager):
             1 - self.get_fee(origin_coin, target_coin, True)
         )
         self.balances[origin_symbol] -= order_quantity
-        self.logger.info(
-            f"Sold {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
-            f"{self.balances[target_symbol]}"
-        )
+        self.logger.info(f"Sold {origin_symbol}, balance now: {self.balances}")
         return {"price": from_coin_price}
 
     def collate_coins(self, target_symbol: str):
@@ -191,7 +185,7 @@ def backtest(
     try:
         while manager.datetime < end_date:
             try:
-                trader.scout()
+                trader.scout(manager.datetime)
             except Exception:  # pylint: disable=broad-except
                 logger.warning(format_exc())
             manager.increment(interval)

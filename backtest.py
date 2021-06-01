@@ -4,7 +4,7 @@ from binance_trade_bot import backtest
 
 if __name__ == "__main__":
     history = []
-    for manager in backtest(datetime(2021, 5, 20), datetime.now(), 10, 50, starting_coin="ETH"):
+    for manager in backtest(datetime(2021, 5, 1), datetime(2021, 6, 1), 30, 50, starting_coin="ETH"):
         btc_value = manager.collate_coins("BTC")
         bridge_value = manager.collate_coins(manager.config.BRIDGE.symbol)
         history.append((btc_value, bridge_value))
@@ -13,6 +13,9 @@ if __name__ == "__main__":
         print("------")
         print("TIME:", manager.datetime)
         print("BALANCES:", manager.balances)
-        print("BTC VALUE:", btc_value, f"({btc_diff}%)")
-        print(f"{manager.config.BRIDGE.symbol} VALUE:", bridge_value, f"({bridge_diff}%)")
+        print("BTC VALUE:", btc_value, f"({btc_diff})")
+        print(f"{manager.config.BRIDGE.symbol} VALUE:", bridge_value, f"({bridge_diff})")
         print("------")
+
+        # 5/1 -- 2661
+        # 5/31 -- 2440

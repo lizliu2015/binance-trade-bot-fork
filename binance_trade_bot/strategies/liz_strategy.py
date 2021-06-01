@@ -28,8 +28,8 @@ def formatKlines(kline: list):
     return kline
 
 def rollingAvg(kline: list):
-    last_3_4hr = kline[-3:]
-    last_5_4hr = kline[-5:]
+    last_3_4hr = kline[-4:-1]
+    last_5_4hr = kline[-6:-1]
     ma3_4hr = sum([float(k[4]) for k in last_3_4hr])/len(last_3_4hr)
     ma5_4hr = sum([float(k[4]) for k in last_5_4hr])/len(last_5_4hr)
     return {"ma3_4hr": ma3_4hr, "ma5_4hr": ma5_4hr}
@@ -41,22 +41,25 @@ class Strategy(AutoTrader):
 
         self.target = self.db.get_coin(TARGET)
 
-    def scout(self, start_at = None):
+    def scout(self, current_time = None):
         """
         Scout for potential jumps from the current coin to another coin
         """
         all_tickers = self.manager.get_all_market_tickers()
         current_coin = self.db.get_current_coin()
 
-        start_time = start_at or (datetime.today() - timedelta(days=1)).replace(tzinfo=timezone.utc).timestamp()
-        klines = self.manager.binance_client.get_historical_klines(self.target + self.config.BRIDGE, self.manager.binance_client.KLINE_INTERVAL_4HOUR, str(start_time), str(start_time + timedelta(days=1)))
+        if current_time is None:
+            current_time = datetime.today()
+
+        start_time = (current_time - timedelta(days=1)).replace(tzinfo=timezone.utc).timestamp()
+        klines = self.manager.binance_client.get_historical_klines(self.target + self.config.BRIDGE, self.manager.binance_client.KLINE_INTERVAL_4HOUR, str(start_time), str(current_time))
         klines = [formatKlines(k) for k in klines]
         avgs = rollingAvg(klines)
 
         # BUY BUY BUY!
         # print(f"{start_time.strftime(DATE_STR_FORMAT)} - {current_coin}")
         if avgs["ma3_4hr"] > avgs["ma5_4hr"] and current_coin.symbol == self.config.BRIDGE.symbol:
-            print(f"BUY - {avgs}")
+            print(f"BUY - {current_time} - {avgs}")
             if self.manager.buy_alt(self.target, self.config.BRIDGE, all_tickers):
                 self.db.set_current_coin(self.target)
             else:
@@ -64,7 +67,7 @@ class Strategy(AutoTrader):
 
         # SELL SELL SELL!
         elif avgs["ma5_4hr"] > avgs["ma3_4hr"] and current_coin.symbol == TARGET:
-            print(f"SELL - {avgs}")
+            print(f"SELL - {current_time} - {avgs}")
             if self.manager.sell_alt(self.target, self.config.BRIDGE, all_tickers):
                 self.db.set_current_coin(self.config.BRIDGE)
             else:
